@@ -1,0 +1,4 @@
+# No special requirements needed, uses standard libraries that come with ComfyUI
+# pillow>=8.0.0
+# numpy>=1.20.0
+# torch>=1.0.0

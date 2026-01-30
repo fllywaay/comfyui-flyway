@@ -1,0 +1,16 @@
+[project]
+name = "comfyui-flyway"
+description = "A ComfyUI plugin for batch image processing and multiline text input with various modes"
+version = "1.0.0"
+license = {file = "LICENSE"}
+
+[project.urls]
+Repository = "https://github.com/switflynet/comfyui-flyway"
+# 请替换为您的实际仓库地址
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["comfyui_flyway*"]
+
+[tool.setuptools.package-data]
+comfyui_flyway = ["*.py", "*.md"]
