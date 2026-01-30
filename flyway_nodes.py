@@ -32,7 +32,8 @@ class ImageListDirectory:
 
     RETURN_TYPES = ("IMAGE", "STRING", "INT")
     RETURN_NAMES = ("images", "path", "count")
-    OUTPUT_IS_LIST = (True, False, False)
+    # 改为 False，输出批次而不是列表
+    OUTPUT_IS_LIST = (False, False, False)
     FUNCTION = "process"
     CATEGORY = "flyway"
 
@@ -71,9 +72,11 @@ class ImageListDirectory:
             image_list.append(torch.from_numpy(arr).unsqueeze(0))
 
         if image_list:
-            return image_list, path, len(image_list)
+            # 使用 torch.cat 将列表合并为一个形状为 [N, H, W, C] 的 Tensor
+            combined_images = torch.cat(image_list, dim=0)
+            return (combined_images, path, len(image_list))
         else:
-            return [torch.zeros((1, 1, 1, 3))], path, 0
+            return (torch.zeros((1, 1, 1, 3)), path, 0
 
 
 # ============================================================
