@@ -1,11 +1,32 @@
+"""
+ComfyUI Flyway Plugin
+
+包含：
+🐦‍🔥 Image List ↔ Directory (鲁棒布尔判断版)
+🐦‍🔥 逻辑过滤（布尔输出/任意输入）
+🐦‍🔥 多行文本轮询
+"""
+
 import os
 import glob
 import random
 import hashlib
+import re
 import numpy as np
 import torch
 from PIL import Image
 import folder_paths
+
+# 辅助函数：深度校验布尔值，防止外部节点传入字符串导致判断错误
+def parse_bool(val):
+    if isinstance(val, bool):
+        return val
+    if isinstance(val, str):
+        # 排除各种表示“假”的字符串
+        return val.strip().lower() not in ("false", "no", "0", "off", "f", "none", "")
+    if isinstance(val, (int, float)):
+        return bool(val)
+    return bool(val)
 
 # ============================================================
 # 🐦‍🔥 Image List ↔ Directory
@@ -13,8 +34,10 @@ import folder_paths
 
 class ImageListDirectory:
     """
-    🐦‍🔥 IMAGE list 与目录交互节点（自动双模式）
+    🐦‍🔥 Image List ↔ Directory
     """
+    _session_counters = {}
+
     @classmethod
     def INPUT_TYPES(cls):
         return {
@@ -27,73 +50,133 @@ class ImageListDirectory:
             },
             "optional": {
                 "images": ("IMAGE",),
+                "any_input": ("*", {}), 
             }
         }
 
     RETURN_TYPES = ("IMAGE", "STRING", "INT")
     RETURN_NAMES = ("images", "path", "count")
-    # 改为 False，输出批次而不是列表
-    OUTPUT_IS_LIST = (False, False, False)
     FUNCTION = "process"
     CATEGORY = "flyway"
 
-    def process(self, path, clear_directory, filename_prefix, skip_count, max_count, images=None):
+    @classmethod
+    def IS_CHANGED(cls, **kwargs):
+        return float("NaN")
+
+    def process(self, path, clear_directory, filename_prefix, skip_count, max_count, images=None, any_input=None):
+        path = os.path.abspath(path)
         os.makedirs(path, exist_ok=True)
-        has_images = images is not None and len(images) > 0
+        
+        # 使用增强版布尔解析，防止外部节点传入 "false" 字符串导致清空失败
+        should_clear = parse_bool(clear_directory)
 
-        if has_images:
-            if clear_directory:
+        # ---------- 写入逻辑 ----------
+        if images is not None and images.shape[0] > 0:
+            if should_clear:
                 for f in os.listdir(path):
-                    fp = os.path.join(path, f)
-                    if os.path.isfile(fp) and f.lower().endswith((".png", ".jpg", ".jpeg", ".bmp", ".tiff", ".gif")):
-                        os.remove(fp)
+                    if f.lower().endswith((".png", ".jpg", ".jpeg", ".bmp", ".tiff", ".gif")):
+                        try: os.remove(os.path.join(path, f))
+                        except: pass
+                start_index = 0
+                self._session_counters[path] = 0
+            else:
+                if path not in self._session_counters:
+                    existing_files = [f for f in os.listdir(path) if f.startswith(filename_prefix)]
+                    if existing_files:
+                        nums = []
+                        for f in existing_files:
+                            match = re.search(r'_(\d+)\.[^.]+$', f)
+                            if match: nums.append(int(match.group(1)))
+                        start_index = max(nums) + 1 if nums else 0
+                    else:
+                        start_index = 0
+                    self._session_counters[path] = start_index
+                else:
+                    start_index = self._session_counters[path]
 
-            existing = [f for f in os.listdir(path) if f.lower().endswith(".png")]
-            start_index = len(existing)
-            for i, img_tensor in enumerate(images):
+            for i in range(images.shape[0]):
+                img_tensor = images[i]
                 arr = (img_tensor.cpu().numpy() * 255.0).clip(0, 255).astype(np.uint8)
                 img = Image.fromarray(arr, "RGB")
                 name = f"{filename_prefix}_{start_index + i:05d}.png"
-                img.save(os.path.join(path, name))
+                img.save(os.path.join(path, name), quality=100)
 
+            self._session_counters[path] = start_index + images.shape[0]
+            print(f"🐦‍🔥 Flyway Save: 写入成功，当前序号累计至 {self._session_counters[path]}")
+
+        # ---------- 读取逻辑 ----------
         exts = ("*.png", "*.jpg", "*.jpeg", "*.bmp", "*.tiff", "*.gif")
         files = []
         for ext in exts:
             files.extend(glob.glob(os.path.join(path, ext)))
-        files.sort()
+        files.sort(key=lambda x: [int(c) if c.isdigit() else c for c in re.split(r'(\d+)', x)])
 
         if skip_count > 0: files = files[skip_count:]
         if max_count > 0: files = files[:max_count]
 
-        image_list = []
+        image_tensors = []
         for f in files:
-            img = Image.open(f).convert("RGB")
-            arr = np.array(img).astype(np.float32) / 255.0
-            image_list.append(torch.from_numpy(arr).unsqueeze(0))
+            try:
+                img = Image.open(f).convert("RGB")
+                arr = np.array(img).astype(np.float32) / 255.0
+                image_tensors.append(torch.from_numpy(arr).unsqueeze(0))
+            except: pass
 
-        if image_list:
-            # 使用 torch.cat 将列表合并为一个形状为 [N, H, W, C] 的 Tensor
-            combined_images = torch.cat(image_list, dim=0)
-            return (combined_images, path, len(image_list))
-        else:
-            return (torch.zeros((1, 1, 1, 3)), path, 0
+        if image_tensors:
+            return (torch.cat(image_tensors, dim=0), path, len(image_tensors))
+        return (torch.zeros((1, 64, 64, 3)), path, 0)
 
 
 # ============================================================
-# 🐦‍🔥 多行文本输入（状态型轮询）
+# 🐦‍🔥 逻辑过滤（布尔输出）
+# ============================================================
+
+class ImageBatchLogicFilter:
+    """
+    🐦‍🔥 逻辑过滤（布尔/条件输出）
+    """
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "images": ("IMAGE",),
+                "target_index": ("INT", {"default": 0, "min": 0}),
+            },
+            "optional": {
+                "any_input": ("*", {}), # 接受任意输入，通常是循环 index
+            }
+        }
+
+    RETURN_TYPES = ("IMAGE", "BOOLEAN")
+    RETURN_NAMES = ("IMAGE", "布尔") # 优化显示名称
+    FUNCTION = "filter"
+    CATEGORY = "flyway"
+
+    @classmethod
+    def IS_CHANGED(cls, **kwargs):
+        return float("NaN")
+
+    def filter(self, images, target_index, any_input=None):
+        try:
+            # 尝试将 any_input 转换为整数进行对比
+            current_val = int(any_input) if any_input is not None else -1
+        except:
+            current_val = -1
+
+        if current_val == target_index:
+            return (images, True)
+        else:
+            return (torch.zeros((1, 1, 1, 3)), False)
+
+
+# ============================================================
+# 🐦‍🔥 多行文本轮询
 # ============================================================
 
 class MultiLineTextInput:
     """
-    🐦‍🔥 多行文本输入
-
-    模式：
-    - sequential: 每次执行自动跳到下一行，末尾后回到开头。
-    - random: 每次执行随机洗牌一行，全部洗完后重新洗牌。
-    - index: 根据输入的 line_index 固定取行。
+    🐦‍🔥 多行文本轮询
     """
-    
-    # 静态缓存，用于跨执行存储当前进度
     _state_cache = {}
 
     @classmethod
@@ -103,6 +186,9 @@ class MultiLineTextInput:
                 "text": ("STRING", {"multiline": True, "default": ""}),
                 "output_mode": (["sequential", "random", "index"], {"default": "sequential"}),
                 "line_index": ("INT", {"default": 0, "min": 0}),
+            },
+            "optional": {
+                "any_input": ("*", {}), 
             }
         }
 
@@ -113,59 +199,35 @@ class MultiLineTextInput:
 
     @classmethod
     def IS_CHANGED(cls, **kwargs):
-        """
-        强制 ComfyUI 在每次点击 Queue 时都认为此节点已改变，
-        从而触发 process 函数，实现自动切行。
-        """
         return float("NaN")
 
-    def process(self, text, output_mode, line_index):
-        # 预处理：去除空行
+    def process(self, text, output_mode, line_index, any_input=None):
         lines = [l.strip() for l in text.split("\n") if l.strip()]
         count = len(lines)
+        if count == 0: return text, "", 0
 
-        if count == 0:
-            return text, "", 0
-
-        # 生成文本指纹，如果文本变了，重置该文本的状态
         text_hash = hashlib.md5(text.encode("utf-8")).hexdigest()
-        
-        # 初始化状态
         if text_hash not in self._state_cache:
-            self._state_cache[text_hash] = {
-                "seq_cursor": 0,
-                "rnd_shuffled": [],
-                "rnd_cursor": 0
-            }
+            self._state_cache[text_hash] = {"seq_cursor": 0, "rnd_indices": [], "rnd_cursor": 0}
         
         state = self._state_cache[text_hash]
 
         if output_mode == "index":
-            # 1. 固定索引模式
             selected_line = lines[line_index % count]
-            
         elif output_mode == "sequential":
-            # 2. 顺序自动轮询模式
-            idx = state["seq_cursor"]
-            selected_line = lines[idx % count]
-            # 更新下一轮索引
-            state["seq_cursor"] = (idx + 1) % count
-            
-        else: # random 模式
-            # 3. 洗牌随机轮询模式
-            # 如果随机队列为空或已跑完，重新洗牌
-            if not state["rnd_shuffled"] or state["rnd_cursor"] >= len(state["rnd_shuffled"]):
+            idx = state["seq_cursor"] % count
+            selected_line = lines[idx]
+            state["seq_cursor"] = idx + 1
+        else: # random
+            if not state["rnd_indices"] or state["rnd_cursor"] >= len(state["rnd_indices"]):
                 indices = list(range(count))
                 random.shuffle(indices)
-                state["rnd_shuffled"] = indices
+                state["rnd_indices"] = indices
                 state["rnd_cursor"] = 0
-            
-            idx_in_lines = state["rnd_shuffled"][state["rnd_cursor"]]
-            selected_line = lines[idx_in_lines]
+            selected_line = lines[state["rnd_indices"][state["rnd_cursor"]]]
             state["rnd_cursor"] += 1
 
         return text, selected_line, count
-
 
 # ============================================================
 # 注册
@@ -173,10 +235,12 @@ class MultiLineTextInput:
 
 NODE_CLASS_MAPPINGS = {
     "ImageListDirectory": ImageListDirectory,
+    "ImageBatchLogicFilter": ImageBatchLogicFilter,
     "MultiLineTextInput": MultiLineTextInput,
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
     "ImageListDirectory": "🐦‍🔥 Image List ↔ Directory",
-    "MultiLineTextInput": "🔥 多行文本轮询（顺序/随机）",
+    "ImageBatchLogicFilter": "🐦‍🔥 逻辑过滤（布尔/条件输出）",
+    "MultiLineTextInput": "🐦‍🔥 多行文本轮询（顺序/随机）",
 }
