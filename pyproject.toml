@@ -1,0 +1,15 @@
+[project]
+name = "comfyui-flyway"
+description = "A ComfyUI plugin containing the BatchImagePath and MultiLineTextInput nodes"
+version = "1.0.0"
+license = {text = "MIT"}
+
+[project.urls]
+Repository = "https://github.com/switflynet/comfyui-flyway"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["comfyui_flyway*"]
+
+[tool.setuptools.package-data]
+comfyui_flyway = ["*.py", "*.md", "*.txt"]
