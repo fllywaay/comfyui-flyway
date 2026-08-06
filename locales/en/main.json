@@ -1,0 +1,28 @@
+{
+  "nodeDefs": {
+    "ImageListDirectory": {
+      "title": "🐦‍🔥 Image List ↔ Directory",
+      "description": "Save and load batches of images from a directory."
+    },
+    "ImageBatchLogicFilter": {
+      "title": "🐦‍🔥 Logic Filter",
+      "description": "Boolean condition output for image batches."
+    },
+    "MultiLineTextInput": {
+      "title": "🐦‍🔥 Multiline Text Input",
+      "description": "Output lines from multiline text in sequential, random, or index mode."
+    },
+    "FishS2TokenEstimator": {
+      "title": "🐦‍🔥 Fish S2 Token Estimator",
+      "description": "Estimate Fish Audio S2 TTS token count and audio duration."
+    },
+    "FlywayAudioSave": {
+      "title": "🐦‍🔥 Audio Save",
+      "description": "Save audio to common formats (wav/flac/mp3/aac/ogg/m4a/opus)."
+    },
+    "FlywayAudioTimeAlign": {
+      "title": "🐦‍🔥 Audio Time Align",
+      "description": "Align translated TTS audio to reference audio timeline using word-level timestamps."
+    }
+  }
+}

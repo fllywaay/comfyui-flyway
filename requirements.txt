@@ -1,2 +1,5 @@
 # ComfyUI Flyway Plugin Requirements
 # This plugin uses built-in libraries, no additional requirements needed
+librosa
+numpy
+soundfile

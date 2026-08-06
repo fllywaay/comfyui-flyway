@@ -1,0 +1,28 @@
+{
+  "nodeDefs": {
+    "ImageListDirectory": {
+      "title": "🐦‍🔥 图片列表 ↔ 目录",
+      "description": "批量保存和读取目录中的图片。"
+    },
+    "ImageBatchLogicFilter": {
+      "title": "🐦‍🔥 逻辑过滤",
+      "description": "图片批次的布尔条件输出。"
+    },
+    "MultiLineTextInput": {
+      "title": "🐦‍🔥 多行文本输入",
+      "description": "以顺序、随机或索引模式输出多行文本中的行。"
+    },
+    "FishS2TokenEstimator": {
+      "title": "🐦‍🔥 Fish S2 Token 估算",
+      "description": "预估 Fish Audio S2 TTS 的 token 数量与音频时长。"
+    },
+    "FlywayAudioSave": {
+      "title": "🐦‍🔥 音频保存",
+      "description": "将音频保存为常见格式（wav/flac/mp3/aac/ogg/m4a/opus）。"
+    },
+    "FlywayAudioTimeAlign": {
+      "title": "🐦‍🔥 音频时间对齐",
+      "description": "使用词级时间戳将翻译后的 TTS 音频对齐到参考音频时间线。"
+    }
+  }
+}

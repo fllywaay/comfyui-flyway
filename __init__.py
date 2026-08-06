@@ -1,32 +1,30 @@
 """
-ComfyUI Flyway Plugin
-一个专用的 ComfyUI 插件，包含图片批处理、文本输入和音频工具等功能
-🐦‍🔥 Image List ↔ Directory - 保存和读取批量图片
-🐦‍🔥 逻辑过滤 - 布尔条件输出
-🐦‍🔥 多行文本轮询 - 处理多行文本，输出顺序/随机段落
-🐦‍🔥 Fish S2 Token 估算 - 预估 Fish Audio S2 TTS token 数与音频时长
-🐦‍🔥 音频保存 - 将音频保存为常见格式（wav/flac/mp3/aac/ogg/m4a/opus）
-🐦‍🔥 音频时间对齐 - 将目标音频 DTW 对齐到参考音频时间轴（如中文配音对齐英文原声）
+ComfyUI Flyway Plugin v1.5.0
+🐦‍🔥 Image List ↔ Directory
+🐦‍🔥 Logic Filter
+🐦‍🔥 Multiline Text Input
+🐦‍🔥 Fish S2 Token Estimator
+🐦‍🔥 Audio Save
+🐦‍🔥 Subtitle & Translate
+🐦‍🔥 Ollama Translate  (standalone)
+🐦‍🔥 TTS Merge
 """
 
-from .flyway_nodes import (
-    NODE_CLASS_MAPPINGS as _MAPPINGS_MAIN,
-    NODE_DISPLAY_NAME_MAPPINGS as _NAMES_MAIN,
-)
-from .flyway_audio_save import (
-    NODE_CLASS_MAPPINGS as _MAPPINGS_AUDIO,
-    NODE_DISPLAY_NAME_MAPPINGS as _NAMES_AUDIO,
-)
-from .flyway_audio_align import (
-    NODE_CLASS_MAPPINGS as _MAPPINGS_ALIGN,
-    NODE_DISPLAY_NAME_MAPPINGS as _NAMES_ALIGN,
-)
+from .flyway_nodes              import NODE_CLASS_MAPPINGS as _M1, NODE_DISPLAY_NAME_MAPPINGS as _N1
+from .flyway_audio_save         import NODE_CLASS_MAPPINGS as _M2, NODE_DISPLAY_NAME_MAPPINGS as _N2
+from .flyway_subtitle_translate import NODE_CLASS_MAPPINGS as _M3, NODE_DISPLAY_NAME_MAPPINGS as _N3
+from .flyway_ollama_translate   import NODE_CLASS_MAPPINGS as _M4, NODE_DISPLAY_NAME_MAPPINGS as _N4
+from .flyway_tts_merge          import NODE_CLASS_MAPPINGS as _M5, NODE_DISPLAY_NAME_MAPPINGS as _N5
 
-NODE_CLASS_MAPPINGS        = {**_MAPPINGS_MAIN, **_MAPPINGS_AUDIO, **_MAPPINGS_ALIGN}
-NODE_DISPLAY_NAME_MAPPINGS = {**_NAMES_MAIN,    **_NAMES_AUDIO,    **_NAMES_ALIGN}
+NODE_CLASS_MAPPINGS        = {**_M1, **_M2, **_M3, **_M4, **_M5}
+NODE_DISPLAY_NAME_MAPPINGS = {**_N1, **_N2, **_N3, **_N4, **_N5}
 
-__all__ = ['NODE_CLASS_MAPPINGS', 'NODE_DISPLAY_NAME_MAPPINGS']
+# 🌟 新增：告诉 ComfyUI 你的前端扩展代码存放在 js 文件夹中
+WEB_DIRECTORY = "./js"
+
+# 🌟 修改：将 'WEB_DIRECTORY' 暴露给 ComfyUI 引擎
+__all__ =['NODE_CLASS_MAPPINGS', 'NODE_DISPLAY_NAME_MAPPINGS', 'WEB_DIRECTORY']
 
 PLUGIN_NAME    = "comfyui-flyway"
-PLUGIN_VERSION = "1.3.0"
+PLUGIN_VERSION = "1.5.0"
 PLUGIN_AUTHOR  = "switflynet"
