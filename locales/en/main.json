@@ -23,6 +23,22 @@
     "FlywayAudioTimeAlign": {
       "title": "🐦‍🔥 Audio Time Align",
       "description": "Align translated TTS audio to reference audio timeline using word-level timestamps."
+    },
+    "BatchImageSaveToPath": {
+      "title": "🐦‍🔥 Batch Image Save To Path",
+      "description": "Save an image batch to any folder with a clear-or-append switch; re-runs every time, so it is safe inside loops."
+    },
+    "SelectEveryNthImage": {
+      "title": "🐦‍🔥 Select Every Nth Image",
+      "description": "Keep every Nth image of a batch (indices 0, N, 2N, ...) to down-sample video frames."
+    },
+    "Florence2LabelDedup": {
+      "title": "🐦‍🔥 Florence2 Label Dedup",
+      "description": "Merge Florence2 detection labels from many frames into one de-duplicated tag list."
+    },
+    "LyricAlignLRC": {
+      "title": "🐦‍🔥 Lyric Align -> LRC/SRT/ASS",
+      "description": "Align known lyrics to a song (lyric-align CLI) or transcribe it with faster-whisper, and output LRC/SRT/VTT/ASS/TTML."
     }
   }
 }

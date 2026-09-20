@@ -23,6 +23,22 @@
     "FlywayAudioTimeAlign": {
       "title": "🐦‍🔥 音频时间对齐",
       "description": "使用词级时间戳将翻译后的 TTS 音频对齐到参考音频时间线。"
+    },
+    "BatchImageSaveToPath": {
+      "title": "🐦‍🔥 批量图片保存到路径",
+      "description": "把图片批次保存到任意目录，可选先清空或续号追加；每次必定重新执行，可安全用于循环内。"
+    },
+    "SelectEveryNthImage": {
+      "title": "🐦‍🔥 每 N 张取一张",
+      "description": "从图片批次中每隔 N 张取一张（索引 0、N、2N…），用于视频抽帧降采样。"
+    },
+    "Florence2LabelDedup": {
+      "title": "🐦‍🔥 Florence2 标签去重",
+      "description": "把多帧 Florence2 检测出的物体标签合并为一份去重后的标签列表。"
+    },
+    "LyricAlignLRC": {
+      "title": "🐦‍🔥 歌词对齐 → LRC/SRT/ASS",
+      "description": "用 lyric-align 把已知歌词对齐到歌曲，或用 faster-whisper 直接转写，输出 LRC/SRT/VTT/ASS/TTML。"
     }
   }
 }

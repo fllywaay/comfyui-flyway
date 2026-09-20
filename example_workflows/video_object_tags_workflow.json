@@ -1,0 +1,127 @@
+{
+  "last_node_id": 5,
+  "last_link_id": 5,
+  "nodes": [
+    {
+      "id": 1,
+      "type": "VHS_LoadVideoPath",
+      "pos": [40, 40],
+      "size": [320, 220],
+      "flags": {},
+      "order": 0,
+      "mode": 0,
+      "outputs": [
+        {"name": "IMAGE", "type": "IMAGE", "links": [1], "slot_index": 0},
+        {"name": "frame_count", "type": "INT", "links": null, "slot_index": 1},
+        {"name": "audio", "type": "AUDIO", "links": null, "slot_index": 2},
+        {"name": "video_info", "type": "VHS_VIDEOINFO", "links": null, "slot_index": 3}
+      ],
+      "properties": {"Node name for S&R": "VHS_LoadVideoPath"},
+      "widgets_values": [
+        "PUT_VIDEO_PATH_HERE.mp4",
+        1,
+        "Disabled",
+        512,
+        512,
+        0,
+        0,
+        1
+      ],
+      "comment": "force_rate=1 -> extracts 1 frame per second. Edit the video path widget."
+    },
+    {
+      "id": 2,
+      "type": "DownloadAndLoadFlorence2Model",
+      "pos": [40, 320],
+      "size": [320, 120],
+      "flags": {},
+      "order": 1,
+      "mode": 0,
+      "outputs": [
+        {"name": "florence2_model", "type": "FL2MODEL", "links": [2], "slot_index": 0}
+      ],
+      "properties": {"Node name for S&R": "DownloadAndLoadFlorence2Model"},
+      "widgets_values": ["microsoft/Florence-2-large", "fp16", "sdpa"]
+    },
+    {
+      "id": 3,
+      "type": "Florence2Run",
+      "pos": [420, 40],
+      "size": [340, 300],
+      "flags": {},
+      "order": 2,
+      "mode": 0,
+      "inputs": [
+        {"name": "image", "type": "IMAGE", "link": 1},
+        {"name": "florence2_model", "type": "FL2MODEL", "link": 2}
+      ],
+      "outputs": [
+        {"name": "image", "type": "IMAGE", "links": null, "slot_index": 0},
+        {"name": "mask", "type": "MASK", "links": null, "slot_index": 1},
+        {"name": "caption", "type": "STRING", "links": [4], "slot_index": 2},
+        {"name": "data", "type": "JSON", "links": [3], "slot_index": 3}
+      ],
+      "properties": {"Node name for S&R": "Florence2Run"},
+      "widgets_values": [
+        "",
+        "region_caption",
+        true,
+        false,
+        1024,
+        3,
+        false,
+        "",
+        1,
+        "fixed"
+      ],
+      "comment": "task widget: region_caption (= Florence-2 <OD> object detection) or dense_region_caption. Widget order: text_input, task, fill_mask, keep_model_loaded, max_new_tokens, num_beams, do_sample, output_mask_select, seed, seed-control. Runs once per frame in the batch."
+    },
+    {
+      "id": 4,
+      "type": "Florence2LabelDedup",
+      "pos": [800, 40],
+      "size": [300, 140],
+      "flags": {},
+      "order": 3,
+      "mode": 0,
+      "inputs": [
+        {"name": "florence2_data", "type": "JSON", "link": 3},
+        {"name": "caption_text", "type": "STRING", "link": 4}
+      ],
+      "outputs": [
+        {"name": "unique_labels", "type": "STRING", "links": [5], "slot_index": 0},
+        {"name": "unique_count", "type": "INT", "links": null, "slot_index": 1}
+      ],
+      "properties": {"Node name for S&R": "Florence2LabelDedup"},
+      "widgets_values": [],
+      "comment": "Custom node from comfyui-flyway - see flyway_florence2_tools.py."
+    },
+    {
+      "id": 5,
+      "type": "ShowText|pysssss",
+      "pos": [1140, 40],
+      "size": [260, 120],
+      "flags": {},
+      "order": 4,
+      "mode": 0,
+      "inputs": [
+        {"name": "text", "type": "STRING", "link": 5}
+      ],
+      "outputs": [],
+      "properties": {"Node name for S&R": "ShowText|pysssss"},
+      "widgets_values": [""],
+      "comment": "Optional: from ComfyUI-Custom-Scripts, just to preview the final tag list."
+    }
+  ],
+  "links": [
+    [1, 1, 0, 3, 0, "IMAGE"],
+    [2, 2, 0, 3, 1, "FL2MODEL"],
+    [3, 3, 3, 4, 0, "JSON"],
+    [4, 3, 2, 4, 1, "STRING"],
+    [5, 4, 0, 5, 0, "STRING"]
+  ],
+  "groups": [],
+  "config": {},
+  "extra": {},
+  "version": 0.4
+}

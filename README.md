@@ -1,71 +1,37 @@
 # ComfyUI Flyway 插件
 
-一个专用的 ComfyUI 插件，包含批次图片路径和多行文本输入等功能。
+Flyway 的 ComfyUI 工具集：字幕翻译、TTS 合成、音频保存、歌词对齐、批量图片保存、Florence2 视频标签等，共 12 个节点，全部在节点菜单的 `flyway` 分类下。
 
-## 节点列表
+**每个节点的介绍、参数和注意事项见 [NODES.md](NODES.md)。**
 
-### 🐦‍🔥批次图片路径
+## 节点一览
 
-节点的主要功能为保存和读取批量图片，直接输出目录中的原图。
+| 节点 | 类名 |
+|------|------|
+| 🐦‍🔥 Image List ↔ Directory（目前为占位实现） | `ImageListDirectory` |
+| 🐦‍🔥 逻辑过滤 | `ImageBatchLogicFilter` |
+| 🐦‍🔥 多行文本轮询 | `MultiLineTextInput` |
+| 🐦‍🔥 Fish S2 Token 估算 | `FishS2TokenEstimator` |
+| 🐦‍🔥 Audio Save | `FlywayAudioSave` |
+| 🐦‍🔥 Subtitle & Translate | `FlywaySubtitleTranslate` |
+| 🐦‍🔥 Ollama Translate | `FlywayOllamaTranslate` |
+| 🐦‍🔥 TTS Merge（与当前 FishAudioS2 不兼容，详见 NODES.md） | `FlywayTTSMerge` |
+| 🐦‍🔥 Batch Image Save To Path | `BatchImageSaveToPath` |
+| 🐦‍🔥 Select Every Nth Image | `SelectEveryNthImage` |
+| 🐦‍🔥 Florence2 Label Dedup | `Florence2LabelDedup` |
+| 🐦‍🔥 Lyric Align -> LRC/SRT/ASS | `LyricAlignLRC` |
 
-#### 功能特点
-- **图片输入**：接收图片批次（可选输入）
-- **图片输出**：直接输出目录中的原图，按名称序列号批次输出
-- **路径设置**：支持全局绝对路径填写，如果路径不存在就创建它，默认为comfyui的out目录
-- **文件前缀**：设置批次保存的图片文件前缀，默认temp+5位数字
-- **跳过数量**：设置批次图片输出加载索引跳过的数量
-- **最大数量**：设置批次图片输出加载的最大数量，默认为0，不限制
-- **清空目录**：非常重要功能，默认开启，这个动作在左侧输入的保存批次图片前执行，（用来防止上次产生的批次图片干扰）
-- **无图片输入时**：不会清理目录中的文件
+## 安装
 
-#### 参数说明
-- `images`: 输入的图片批次（可选）
-- `path`: 保存路径（支持全局绝对路径，自动创建不存在的目录）
-- `filename_prefix`: 文件名前缀（默认为 "temp"）
-- `skip_count`: 跳过的图片数量（默认为 0）
-- `max_count`: 最大加载数量（默认为 0，表示无限制）
-- `clear_directory`: 是否清空目录（默认为 True，防止上次结果干扰）
+1. 将此文件夹放到 ComfyUI 的 `custom_nodes` 目录下
+2. `pip install -r requirements.txt`（可选依赖见该文件内注释）
+3. 重启 ComfyUI
 
-#### 返回值
-- `images`: 按序列号排序的图片列表（目录中的原图）
-- `count`: 图片总数
+## 示例工作流
 
-### 🐦‍🔥多行文本输入
+`example_workflows/video_object_tags_workflow.json`：视频 → Florence2 检测 → 整段视频物体标签去重。
 
-节点的作用是可以忽略多行文本中的空白行，每次执行时从多行文本里挑选行文本输出，每次输出一个随机行/指定行、且忽略空白行。
+## 版本记录
 
-#### 功能特点
-- **原始字符串输出**：输出完整的原始文本
-- **两种输出模式**：
-  - 随机输出：每次随机选择一行输出（每次执行结果都会变化）
-  - 按索引输出：根据指定索引输出特定行
-- **忽略空白行**：自动忽略文本中的空白行
-
-#### 参数说明
-- `text`: 输入的多行文本
-- `output_line_mode`: 输出行模式（random=随机输出, index=按索引输出）
-- `line_index`: 当输出模式为按索引时，指定输出第几行（从0开始）
-
-#### 返回值
-- `full_text`: 完整的原始文本
-- `line_text`: 输出的单行文本
-- `line_count`: 非空行的总数
-
-#### 使用场景
-此节点特别适用于需要保存中间图片结果并在后续步骤中重新加载的场景，特别是在批量处理图片时，可以有效组织和管理图片文件。
-
-## 安装方法
-
-1. 将此文件夹复制到 ComfyUI 的 `custom_nodes` 目录下
-2. 重启 ComfyUI
-
-## 使用示例
-
-在 ComfyUI 中，您可以在 "flyway" 类别中找到 "🐦‍🔥批次图片路径" 和 "🐦‍🔥多行文本输入" 节点。
-
-## 注意事项
-
-- 请确保设置的路径有足够的写入权限
-- 清空目录功能默认开启，以防止上次的结果影响本次处理
-- 所有图片将以 PNG 格式保存
-- 多行文本节点会自动忽略空白行
+- **1.6.0**：并入原 `test-comfyui` 插件（批量图片保存、每 N 张取一张、Florence2 标签去重、歌词对齐）；统一分类与命名；新增 NODES.md。
+- 1.5.0：Audio Save、Subtitle & Translate、Ollama Translate、TTS Merge。

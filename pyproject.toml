@@ -1,7 +1,7 @@
 [project]
 name = "comfyui-flyway"
-description = "A ComfyUI plugin containing the BatchImagePath and MultiLineTextInput nodes"
-version = "1.0.0"
+description = "Flyway toolbox for ComfyUI: subtitle translation, TTS merge, audio save, lyric alignment, batch image save and Florence2 video tagging helpers"
+version = "1.6.0"
 license = {text = "MIT"}
 
 [project.urls]

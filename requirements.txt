@@ -1,5 +1,13 @@
 # ComfyUI Flyway Plugin Requirements
-# This plugin uses built-in libraries, no additional requirements needed
+# Installed automatically (e.g. by ComfyUI-Manager):
 librosa
 numpy
 soundfile
+
+# Optional - deliberately NOT auto-installed, because they can pull in/replace
+# heavy packages (ctranslate2, torch-related wheels) in a carefully tuned
+# environment. Install manually into ComfyUI's Python only if you use the node:
+#   pydub           Audio Save with mp3/aac/m4a/ogg/opus (also needs ffmpeg on PATH)
+#   faster-whisper  Lyric Align, when lyrics_text is left empty (plain transcription)
+# External CLI (not a pip package of this env):
+#   lyric-align     Lyric Align with known lyrics:  uv tool install "lyric-align[asr]"
