@@ -1,44 +1,68 @@
 {
   "nodeDefs": {
     "ImageListDirectory": {
-      "title": "🐦‍🔥 Image List ↔ Directory",
+      "display_name": "🐦‍🔥 Image List ↔ Directory",
       "description": "Save and load batches of images from a directory."
     },
     "ImageBatchLogicFilter": {
-      "title": "🐦‍🔥 Logic Filter",
+      "display_name": "🐦‍🔥 Logic Filter",
       "description": "Boolean condition output for image batches."
     },
     "MultiLineTextInput": {
-      "title": "🐦‍🔥 Multiline Text Input",
+      "display_name": "🐦‍🔥 Multiline Text Input",
       "description": "Output lines from multiline text in sequential, random, or index mode."
     },
     "FishS2TokenEstimator": {
-      "title": "🐦‍🔥 Fish S2 Token Estimator",
+      "display_name": "🐦‍🔥 Fish S2 Token Estimator",
       "description": "Estimate Fish Audio S2 TTS token count and audio duration."
     },
     "FlywayAudioSave": {
-      "title": "🐦‍🔥 Audio Save",
+      "display_name": "🐦‍🔥 Audio Save",
       "description": "Save audio to common formats (wav/flac/mp3/aac/ogg/m4a/opus)."
     },
-    "FlywayAudioTimeAlign": {
-      "title": "🐦‍🔥 Audio Time Align",
-      "description": "Align translated TTS audio to reference audio timeline using word-level timestamps."
-    },
     "BatchImageSaveToPath": {
-      "title": "🐦‍🔥 Batch Image Save To Path",
+      "display_name": "🐦‍🔥 Batch Image Save To Path",
       "description": "Save an image batch to any folder with a clear-or-append switch; re-runs every time, so it is safe inside loops."
     },
     "SelectEveryNthImage": {
-      "title": "🐦‍🔥 Select Every Nth Image",
+      "display_name": "🐦‍🔥 Select Every Nth Image",
       "description": "Keep every Nth image of a batch (indices 0, N, 2N, ...) to down-sample video frames."
     },
     "Florence2LabelDedup": {
-      "title": "🐦‍🔥 Florence2 Label Dedup",
+      "display_name": "🐦‍🔥 Florence2 Label Dedup",
       "description": "Merge Florence2 detection labels from many frames into one de-duplicated tag list."
     },
     "LyricAlignLRC": {
-      "title": "🐦‍🔥 Lyric Align -> LRC/SRT/ASS",
+      "display_name": "🐦‍🔥 Lyric Align -> LRC/SRT/ASS",
       "description": "Align known lyrics to a song (lyric-align CLI) or transcribe it with faster-whisper, and output LRC/SRT/VTT/ASS/TTML."
+    },
+    "FlywaySubtitleTranslate": {
+      "display_name": "🐦‍🔥 Subtitle & Translate",
+      "description": "Cut word-level timestamped text into subtitle lines (SRT/WebVTT), with optional translation; segmentation supports a punctuation-rule mode or an LLM-grouping mode."
+    },
+    "FlywayOllamaTranslate": {
+      "display_name": "🐦‍🔥 Ollama Translate",
+      "description": "Standalone Ollama translation node that translates an existing SRT/WebVTT file directly, with an optional image for multimodal context."
+    },
+    "FlywayTTSMerge": {
+      "display_name": "🐦‍🔥 TTS Merge",
+      "description": "Read a translated SRT, generate speech per line with FishAudioS2, align each line to its time slot, and stitch one full audio track with optional background mixing."
+    },
+    "FlywayH3MotionContextDir": {
+      "display_name": "🐦‍🔥 H3 Motion Context (Directory)",
+      "description": "Read the previous clip's tail frames from a folder and anchor them at frame 0 of the next clip; skips on an empty folder, with an optional clear-first switch."
+    },
+    "FlywayH3MotionContextImage": {
+      "display_name": "🐦‍🔥 H3 Motion Context (Image)",
+      "description": "Same as the Directory version, but the previous clip's frames arrive as an IMAGE batch - built for carrying state through a For Loop."
+    },
+    "FlywayImageBatchExtendOverlap": {
+      "display_name": "🐦‍🔥 Image Batch Extend With Overlap",
+      "description": "Join a new clip onto the frames so far, dropping the duplicated overlap frames, with an optional disk cache - built for stitching a video together clip by clip inside a Loop."
+    },
+    "FlywayAudioBatchExtendOverlap": {
+      "display_name": "🐦‍🔥 Audio Batch Extend With Overlap",
+      "description": "Audio counterpart of the image version: trims overlap in seconds and auto-resamples, with an optional disk cache - built for keeping the soundtrack in sync inside a Loop."
     }
   }
 }

@@ -1,44 +1,627 @@
 {
   "nodeDefs": {
     "ImageListDirectory": {
-      "title": "🐦‍🔥 图片列表 ↔ 目录",
-      "description": "批量保存和读取目录中的图片。"
+      "display_name": "🐦‍🔥 图片列表 ↔ 目录",
+      "description": "批量保存和读取目录中的图片。",
+      "inputs": {
+        "path": {
+          "name": "路径"
+        },
+        "clear_directory": {
+          "name": "清空目录"
+        },
+        "filename_prefix": {
+          "name": "文件名前缀"
+        },
+        "skip_count": {
+          "name": "跳过数量"
+        },
+        "max_count": {
+          "name": "最大数量"
+        },
+        "images": {
+          "name": "图像批次"
+        }
+      },
+      "outputs": {
+        "0": {
+          "name": "图像批次"
+        },
+        "1": {
+          "name": "路径"
+        },
+        "2": {
+          "name": "数量"
+        }
+      }
     },
     "ImageBatchLogicFilter": {
-      "title": "🐦‍🔥 逻辑过滤",
-      "description": "图片批次的布尔条件输出。"
+      "display_name": "🐦‍🔥 逻辑过滤",
+      "description": "图片批次的布尔条件输出。",
+      "inputs": {
+        "images": {
+          "name": "图像批次"
+        },
+        "target_index": {
+          "name": "目标索引"
+        },
+        "any_input": {
+          "name": "任意输入"
+        }
+      },
+      "outputs": {
+        "0": {
+          "name": "图像"
+        }
+      }
     },
     "MultiLineTextInput": {
-      "title": "🐦‍🔥 多行文本输入",
-      "description": "以顺序、随机或索引模式输出多行文本中的行。"
+      "display_name": "🐦‍🔥 多行文本输入",
+      "description": "以顺序、随机或索引模式输出多行文本中的行。",
+      "inputs": {
+        "text": {
+          "name": "文本"
+        },
+        "output_mode": {
+          "name": "输出模式"
+        },
+        "line_index": {
+          "name": "行索引"
+        }
+      },
+      "outputs": {
+        "0": {
+          "name": "完整文本"
+        },
+        "1": {
+          "name": "当前行文本"
+        },
+        "2": {
+          "name": "行数"
+        }
+      }
     },
     "FishS2TokenEstimator": {
-      "title": "🐦‍🔥 Fish S2 Token 估算",
-      "description": "预估 Fish Audio S2 TTS 的 token 数量与音频时长。"
+      "display_name": "🐦‍🔥 Fish S2 Token 估算",
+      "description": "预估 Fish Audio S2 TTS 的 token 数量与音频时长。",
+      "inputs": {
+        "text": {
+          "name": "文本"
+        },
+        "char_multiplier": {
+          "name": "字符倍率"
+        },
+        "tag_weight": {
+          "name": "标签权重"
+        },
+        "base_padding": {
+          "name": "基础填充"
+        },
+        "token_offset": {
+          "name": "Token 偏移"
+        }
+      },
+      "outputs": {
+        "0": {
+          "name": "最大 Token 数"
+        },
+        "1": {
+          "name": "预估时长(秒)"
+        },
+        "2": {
+          "name": "文本"
+        },
+        "3": {
+          "name": "报告"
+        }
+      }
     },
     "FlywayAudioSave": {
-      "title": "🐦‍🔥 音频保存",
-      "description": "将音频保存为常见格式（wav/flac/mp3/aac/ogg/m4a/opus）。"
-    },
-    "FlywayAudioTimeAlign": {
-      "title": "🐦‍🔥 音频时间对齐",
-      "description": "使用词级时间戳将翻译后的 TTS 音频对齐到参考音频时间线。"
+      "display_name": "🐦‍🔥 音频保存",
+      "description": "将音频保存为常见格式（wav/flac/mp3/aac/ogg/m4a/opus）。",
+      "inputs": {
+        "audio": {
+          "name": "音频"
+        },
+        "save_file": {
+          "name": "保存到文件"
+        },
+        "format": {
+          "name": "格式"
+        },
+        "quality": {
+          "name": "质量"
+        },
+        "filename_prefix": {
+          "name": "文件名前缀"
+        },
+        "result": {
+          "name": "结果"
+        }
+      },
+      "outputs": {
+        "0": {
+          "name": "文件路径"
+        },
+        "1": {
+          "name": "文件名"
+        }
+      }
     },
     "BatchImageSaveToPath": {
-      "title": "🐦‍🔥 批量图片保存到路径",
-      "description": "把图片批次保存到任意目录，可选先清空或续号追加；每次必定重新执行，可安全用于循环内。"
+      "display_name": "🐦‍🔥 批量图片保存到路径",
+      "description": "把图片批次保存到任意目录，可选先清空或续号追加；每次必定重新执行，可安全用于循环内。",
+      "inputs": {
+        "images": {
+          "name": "图像批次"
+        },
+        "save_path": {
+          "name": "保存路径"
+        },
+        "clear_before_save": {
+          "name": "保存前先清空"
+        },
+        "filename_prefix": {
+          "name": "文件名前缀"
+        },
+        "file_format": {
+          "name": "文件格式"
+        }
+      },
+      "outputs": {
+        "0": {
+          "name": "输出路径"
+        }
+      }
     },
     "SelectEveryNthImage": {
-      "title": "🐦‍🔥 每 N 张取一张",
-      "description": "从图片批次中每隔 N 张取一张（索引 0、N、2N…），用于视频抽帧降采样。"
+      "display_name": "🐦‍🔥 每 N 张取一张",
+      "description": "从图片批次中每隔 N 张取一张（索引 0、N、2N…），用于视频抽帧降采样。",
+      "inputs": {
+        "images": {
+          "name": "图像批次"
+        },
+        "n": {
+          "name": "间隔 N 张取一张"
+        }
+      },
+      "outputs": {
+        "0": {
+          "name": "图像批次"
+        },
+        "1": {
+          "name": "数量"
+        }
+      }
     },
     "Florence2LabelDedup": {
-      "title": "🐦‍🔥 Florence2 标签去重",
-      "description": "把多帧 Florence2 检测出的物体标签合并为一份去重后的标签列表。"
+      "display_name": "🐦‍🔥 Florence2 标签去重",
+      "description": "把多帧 Florence2 检测出的物体标签合并为一份去重后的标签列表。",
+      "inputs": {
+        "florence2_data": {
+          "name": "Florence2 数据"
+        },
+        "caption_text": {
+          "name": "说明文字"
+        }
+      },
+      "outputs": {
+        "0": {
+          "name": "去重后标签"
+        },
+        "1": {
+          "name": "标签数量"
+        }
+      }
     },
     "LyricAlignLRC": {
-      "title": "🐦‍🔥 歌词对齐 → LRC/SRT/ASS",
-      "description": "用 lyric-align 把已知歌词对齐到歌曲，或用 faster-whisper 直接转写，输出 LRC/SRT/VTT/ASS/TTML。"
+      "display_name": "🐦‍🔥 歌词对齐 → LRC/SRT/ASS",
+      "description": "用 lyric-align 把已知歌词对齐到歌曲，或用 faster-whisper 直接转写，输出 LRC/SRT/VTT/ASS/TTML。",
+      "inputs": {
+        "audio": {
+          "name": "音频"
+        },
+        "lyrics_text": {
+          "name": "歌词文本"
+        },
+        "language": {
+          "name": "语言"
+        },
+        "asr_model": {
+          "name": "语音识别模型"
+        },
+        "asr_device": {
+          "name": "识别设备"
+        },
+        "output_format": {
+          "name": "输出格式"
+        },
+        "no_vad": {
+          "name": "禁用语音活动检测"
+        },
+        "karaoke": {
+          "name": "卡拉OK模式"
+        },
+        "interpolate": {
+          "name": "插值"
+        },
+        "save_lyrics": {
+          "name": "保存歌词文件"
+        },
+        "free_vram_first": {
+          "name": "先释放显存"
+        },
+        "output_dir": {
+          "name": "输出目录"
+        },
+        "filename_prefix": {
+          "name": "文件名前缀"
+        }
+      },
+      "outputs": {
+        "0": {
+          "name": "对齐结果文本"
+        },
+        "1": {
+          "name": "输出路径"
+        }
+      }
+    },
+    "FlywaySubtitleTranslate": {
+      "display_name": "🐦‍🔥 字幕与翻译",
+      "description": "把词级时间戳文本切成字幕行（SRT/WebVTT），可选再整体翻译；分句支持标点规则或 LLM 分组两种模式。",
+      "inputs": {
+        "timestamps": {
+          "name": "词级时间戳"
+        },
+        "default": {
+          "name": "兜底文本"
+        },
+        "segment_mode": {
+          "name": "分句模式"
+        },
+        "subtitle_format": {
+          "name": "字幕格式"
+        },
+        "api_base_url": {
+          "name": "接口地址"
+        },
+        "model_list": {
+          "name": "模型列表"
+        },
+        "custom_model": {
+          "name": "自定义模型"
+        },
+        "temperature": {
+          "name": "温度"
+        },
+        "top_p": {
+          "name": "Top P"
+        },
+        "top_k": {
+          "name": "Top K"
+        },
+        "repeat_penalty": {
+          "name": "重复惩罚"
+        },
+        "num_ctx": {
+          "name": "上下文窗口"
+        },
+        "timeout_seconds": {
+          "name": "超时秒数"
+        },
+        "target_language": {
+          "name": "目标语言"
+        },
+        "translate_system_prompt": {
+          "name": "翻译系统提示词"
+        },
+        "unload_after": {
+          "name": "用后卸载模型"
+        },
+        "source_text": {
+          "name": "原始文本"
+        }
+      },
+      "outputs": {
+        "0": {
+          "name": "字幕"
+        },
+        "1": {
+          "name": "翻译后字幕"
+        }
+      }
+    },
+    "FlywayOllamaTranslate": {
+      "display_name": "🐦‍🔥 Ollama 翻译",
+      "description": "独立的 Ollama 翻译节点，直接翻译一份现成的 SRT/WebVTT 文本，可选附一张图给多模态模型当上下文。",
+      "inputs": {
+        "subtitle_text": {
+          "name": "字幕文本"
+        },
+        "ollama_url": {
+          "name": "Ollama 地址"
+        },
+        "model_list": {
+          "name": "模型列表"
+        },
+        "custom_model": {
+          "name": "自定义模型"
+        },
+        "system_prompt": {
+          "name": "系统提示词"
+        },
+        "target_language": {
+          "name": "目标语言"
+        },
+        "temperature": {
+          "name": "温度"
+        },
+        "top_p": {
+          "name": "Top P"
+        },
+        "top_k": {
+          "name": "Top K"
+        },
+        "repeat_penalty": {
+          "name": "重复惩罚"
+        },
+        "num_ctx": {
+          "name": "上下文窗口"
+        },
+        "timeout_seconds": {
+          "name": "超时秒数"
+        },
+        "unload_after": {
+          "name": "用后卸载模型"
+        },
+        "image": {
+          "name": "图像"
+        }
+      },
+      "outputs": {
+        "0": {
+          "name": "翻译后字幕"
+        },
+        "1": {
+          "name": "纯文本行"
+        }
+      }
+    },
+    "FlywayTTSMerge": {
+      "display_name": "🐦‍🔥 TTS 合成拼接",
+      "description": "读取翻译后的 SRT，逐句调用 FishAudioS2 生成语音，按每句时间槽对齐，拼成一条完整音轨，可混入背景音。",
+      "inputs": {
+        "translated_subtitle": {
+          "name": "翻译后字幕"
+        },
+        "checkpoint": {
+          "name": "模型权重"
+        },
+        "precision": {
+          "name": "精度"
+        },
+        "compile": {
+          "name": "编译加速"
+        },
+        "seed": {
+          "name": "种子"
+        },
+        "overflow_mode": {
+          "name": "超长处理模式"
+        },
+        "tts_volume": {
+          "name": "TTS 音量"
+        },
+        "ref_audio": {
+          "name": "参考音频"
+        },
+        "ref_text": {
+          "name": "参考文本"
+        },
+        "bg_audio": {
+          "name": "背景音频"
+        },
+        "mix_background": {
+          "name": "混合背景音"
+        },
+        "bg_volume": {
+          "name": "背景音量"
+        },
+        "per_segment_json": {
+          "name": "逐句参数 JSON"
+        }
+      },
+      "outputs": {
+        "0": {
+          "name": "音频"
+        },
+        "1": {
+          "name": "报告"
+        }
+      }
+    },
+    "FlywayH3MotionContextDir": {
+      "display_name": "🐦‍🔥 H3 运动上下文（目录）",
+      "description": "从目录读取上一段的尾帧，锚定到新段的第 0 帧；目录为空就跳过，可先清空目录。",
+      "inputs": {
+        "positive": {
+          "name": "正向条件"
+        },
+        "latent": {
+          "name": "潜变量"
+        },
+        "vae": {
+          "name": "VAE"
+        },
+        "directory": {
+          "name": "目录"
+        },
+        "context_length": {
+          "name": "上下文长度"
+        },
+        "sort_by": {
+          "name": "排序方式"
+        },
+        "clear_directory": {
+          "name": "前置清理"
+        }
+      },
+      "outputs": {
+        "0": {
+          "name": "正向条件"
+        },
+        "1": {
+          "name": "上下文帧数"
+        },
+        "2": {
+          "name": "状态"
+        }
+      }
+    },
+    "FlywayH3MotionContextImage": {
+      "display_name": "🐦‍🔥 H3 运动上下文（图像）",
+      "description": "同目录版，但上一段的帧直接以 IMAGE 批次传入，适合在 For Loop 里传递。",
+      "inputs": {
+        "positive": {
+          "name": "正向条件"
+        },
+        "latent": {
+          "name": "潜变量"
+        },
+        "vae": {
+          "name": "VAE"
+        },
+        "context_length": {
+          "name": "上下文长度"
+        },
+        "context_images": {
+          "name": "上一段帧"
+        }
+      },
+      "outputs": {
+        "0": {
+          "name": "正向条件"
+        },
+        "1": {
+          "name": "上下文帧数"
+        },
+        "2": {
+          "name": "状态"
+        }
+      }
+    },
+    "FlywayImageBatchExtendOverlap": {
+      "display_name": "🐦‍🔥 图像批次拼接（去重叠）",
+      "description": "Loop 累加器：按 accumulator_id 自动记住已拼好的帧，去重叠后追加，is_last=True 时输出完整视频；可选缓存到磁盘。",
+      "inputs": {
+        "new_images": {
+          "name": "新图像"
+        },
+        "accumulator_id": {
+          "name": "累加器标识"
+        },
+        "overlap": {
+          "name": "重叠帧数"
+        },
+        "overlap_side": {
+          "name": "重叠扣除方"
+        },
+        "overlap_mode": {
+          "name": "重叠模式"
+        },
+        "tail_frames": {
+          "name": "尾段帧数"
+        },
+        "is_last": {
+          "name": "是否最后一轮"
+        },
+        "cache_path": {
+          "name": "缓存路径"
+        },
+        "reset": {
+          "name": "重置累加器"
+        },
+        "index": {
+          "name": "循环索引"
+        },
+        "total": {
+          "name": "循环总批次"
+        }
+      },
+      "outputs": {
+        "0": {
+          "name": "拼接后图像"
+        },
+        "1": {
+          "name": "新增图像"
+        },
+        "2": {
+          "name": "尾段图像"
+        },
+        "3": {
+          "name": "实际重叠帧数"
+        },
+        "4": {
+          "name": "总帧数"
+        }
+      }
+    },
+    "FlywayAudioBatchExtendOverlap": {
+      "display_name": "🐦‍🔥 音频批次拼接（去重叠）",
+      "description": "图像累加器的音频版：按秒数去重叠并自动重采样，is_last=True 时输出完整声轨，可选缓存到磁盘。",
+      "inputs": {
+        "new_audio": {
+          "name": "新音频"
+        },
+        "accumulator_id": {
+          "name": "累加器标识"
+        },
+        "overlap_seconds": {
+          "name": "重叠秒数"
+        },
+        "overlap_side": {
+          "name": "重叠扣除方"
+        },
+        "overlap_mode": {
+          "name": "重叠模式"
+        },
+        "tail_seconds": {
+          "name": "尾段秒数"
+        },
+        "is_last": {
+          "name": "是否最后一轮"
+        },
+        "cache_path": {
+          "name": "缓存路径"
+        },
+        "reset": {
+          "name": "重置累加器"
+        },
+        "index": {
+          "name": "循环索引"
+        },
+        "total": {
+          "name": "循环总批次"
+        }
+      },
+      "outputs": {
+        "0": {
+          "name": "拼接后音频"
+        },
+        "1": {
+          "name": "新增音频"
+        },
+        "2": {
+          "name": "尾段音频"
+        },
+        "3": {
+          "name": "实际重叠秒数"
+        },
+        "4": {
+          "name": "总时长(秒)"
+        }
+      }
     }
   }
 }

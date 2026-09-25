@@ -1,6 +1,6 @@
 # ComfyUI Flyway — 节点说明与注意事项
 
-版本 1.6.0 · 共 12 个节点 · 全部位于节点菜单 `flyway` 分类下 · 文档依据代码实际行为编写（2026-09-20）
+版本 1.9.0 · 共 16 个节点 · 全部位于节点菜单 `flyway` 分类下 · 文档依据代码实际行为编写（2026-09-24）
 
 > 本文档同时记录"已知问题"。带 ⚠️ / ❌ 的条目是读代码和已安装插件源码后发现的，**尚未在 ComfyUI 里实跑验证**，遇到时请以实际报错为准。
 
@@ -20,6 +20,10 @@
 | 10 | 🐦‍🔥 Select Every Nth Image | `SelectEveryNthImage` | 每 N 张取 1 张 | test-comfyui | ✅ |
 | 11 | 🐦‍🔥 Florence2 Label Dedup | `Florence2LabelDedup` | 多帧检测标签合并去重 | test-comfyui | ⚠️ |
 | 12 | 🐦‍🔥 Lyric Align -> LRC/SRT/ASS | `LyricAlignLRC` | 歌词对齐 / 无歌词直接转写 | test-comfyui | ⚠️ 依赖外部工具 |
+| 13 | 🐦‍🔥 H3 运动上下文（目录） | `FlywayH3MotionContextDir` | 从目录读取上一段尾帧，锚定到新段第 0 帧；可先清空目录 | flyway | ✅ 已用假 VAE/latent 自测 |
+| 14 | 🐦‍🔥 H3 运动上下文（图像） | `FlywayH3MotionContextImage` | 同上，但用 IMAGE 批次传入，适合 For Loop | flyway | ✅ 已用假 VAE/latent 自测 |
+| 15 | 🐦‍🔥 图像批次拼接（去重叠） | `FlywayImageBatchExtendOverlap` | Loop 累加器：按 accumulator_id/index 自动记住已拼帧，去重叠追加，收尾时输出完整视频 | flyway | ✅ 已自测（张量层面+累加器） |
+| 16 | 🐦‍🔥 音频批次拼接（去重叠） | `FlywayAudioBatchExtendOverlap` | 图像累加器的音频版：按秒数去重叠、自动重采样 | flyway | ✅ 已自测（张量层面+累加器） |
 
 - **类名（ID）没有改动**：旧工作流里保存的是类名，不是显示名，所以合并前存的工作流仍能正常加载。
 - 中文标题来自 `locales/zh/main.json`（新前端下显示中文），英文显示名是回退。
@@ -30,7 +34,8 @@
 2. **❌ Image List ↔ Directory 是占位代码**：`flyway_nodes.py` 里 `process()` 只返回一张 64×64 黑图、空路径、0。README 旧版描述的"保存/读取/清空目录"功能在代码里并不存在。需要批量存图请用节点 9。
 3. **⚠️ 多行文本轮询的 `output_mode` 不起作用**：代码始终按 `line_index` 取行（见节点 3）。
 4. **⚠️ 示例工作流依赖第三方插件版本**（见第五节）。
-5. `locales/*/main.json` 和 `js/flyway_audio.js` 里还留着已删除的 `FlywayAudioTimeAlign`（以及 js 里的 `FlywayFishAudioAlign`、`FlywayTranslateAndAlign`），无害，但对应节点已不存在。
+5. `js/flyway_audio.js` 里还留着已删除节点的引用（`FlywayFishAudioAlign`、`FlywayTranslateAndAlign`），无害，但对应节点已不存在。（`locales/*/main.json` 里同类的 `FlywayAudioTimeAlign` 残留已在 1.8.0 清理，并补齐了 `FlywaySubtitleTranslate`/`FlywayOllamaTranslate`/`FlywayTTSMerge` 三个此前一直缺失的中英文节点名——这三个节点在中文界面下之前会一直显示英文名。）
+6. **H3 Motion Context (Directory) 的 `clear_directory` 只删该目录里的图片文件**（不递归、不碰子文件夹和其他文件），并且拒绝清空盘符根目录、用户主目录，以及 ComfyUI 的 input/output 根目录——防止误填路径时清错地方。想清空的目录必须是一个专用子文件夹。
 
 ---
 
@@ -359,6 +364,120 @@
 
 ---
 
+### 13. 🐦‍🔥 H3 Motion Context (Directory)　`FlywayH3MotionContextDir`　✅
+
+**简介**：把上一段 MiniMax H3 clip 的尾帧从磁盘目录读进来，VAE 编码后锚定为新 clip 第 0 帧的 guide（和原生 "Add Guide for MiniMax H3" 同一机制），用于 Ref2VA 逐段生成时让新段接上上一段的运动。
+
+| 输入 | 类型 | 默认 | 说明 |
+|------|------|------|------|
+| `positive` | CONDITIONING | — | 正向条件，会在其上追加一个 `minimax_keyframes` 项，已有的会保留 |
+| `latent` | LATENT | — | 当前要生成的 clip 的 MiniMax H3 AV latent，用来推算画布分辨率和帧数 |
+| `vae` | VAE | — | 用于编码参考帧 |
+| `directory` | STRING | 空 | 存放**上一段**帧图片的目录（png/jpg/jpeg/webp/bmp/tif）；为空或不存在则跳过 |
+| `context_length` | `5/22/39/56` | 22 | 想用作上下文的尾帧数；磁盘帧数不够或 clip 太短会自动降档 |
+| `sort_by` | `name/modified_time` | name | 按文件名自然排序（`clip_2` 排在 `clip_10` 前）或按修改时间排序 |
+| `clear_directory` | BOOLEAN | False | True：先删除该目录里的图片文件，再读取（此时必为空，本次跳过）。建议接一个外部逻辑节点（如 `index == 0`），只在 Loop 第一次迭代时打开，避免读到上一次任务遗留的帧 |
+
+输出：`positive`(CONDITIONING)、`context_frames`(INT，本次实际用了几帧，0=跳过)、`status`(STRING，人类可读状态，便于接预览节点核对)
+
+**注意**
+- **每段建议用独立的子目录**（如 `clip01`、`clip02`）。多段共用一个目录时，`clear_directory` 主要用于 Loop 第一次迭代清掉遗留帧；同一目录内新旧帧混杂会读到错误的"上一段"。
+- `clear_directory` **只删目录里的图片文件**，不递归、不碰子文件夹或非图片文件；并且**拒绝**清空盘符根目录、当前用户主目录、以及 ComfyUI 的 input/output 根目录，报错会明确说明原因。
+- `IS_CHANGED` 恒返回 NaN，强制每次都重新执行（读目录、可能删除文件都是有副作用的操作，不能被 ComfyUI 缓存跳过）——同 `BatchImageSaveToPath`（节点 9）的做法。
+- `latent` 必须是 MiniMax H3 的 AV 潜变量（嵌套张量，`tensors[0]` 是 5 维视频张量），否则报 `ValueError`。
+- 拼接时新 clip 的前 `context_frames` 帧就是这里用作上下文的帧，会重复出现，需要用节点 15 去重叠。
+- ✅ 已用假 VAE/latent 做了 21+ 项自测（`tests/test_h3_motion.py`），覆盖跳过、清目录、自然排序、安全拒绝等分支；**尚未在真实 ComfyUI 采样流程里跑过**。
+
+---
+
+### 14. 🐦‍🔥 H3 Motion Context (Image)　`FlywayH3MotionContextImage`　✅
+
+**简介**：和节点 13 功能一致，但上一段的帧不经磁盘，直接以 `IMAGE` 批次传入——适合把状态放在 For Loop 里流转，而不是每轮存读文件。
+
+| 输入 | 类型 | 默认 | 说明 |
+|------|------|------|------|
+| `positive` | CONDITIONING | — | 同节点 13 |
+| `latent` | LATENT | — | 同节点 13 |
+| `vae` | VAE | — | 同节点 13 |
+| `context_length` | `5/22/39/56` | 22 | 同节点 13 |
+| `context_images`（可选） | IMAGE | — | 上一段（或目前为止全部）的帧，只取最后 N 帧；**不接 / None / 空批次 = 跳过**，这正是 For Loop 第一轮起始值不接线时会传入的值 |
+
+输出：`positive`(CONDITIONING)、`context_frames`(INT)、`status`(STRING)
+
+**注意**
+- 输入若带 alpha 通道会自动丢弃，若只有 1 通道会广播成 3 通道。
+- 输入必须是 4 维的 `[frames, H, W, C]` 张量，否则报 `ValueError`。
+- 没有 `clear_directory` 这类开关：Loop 里"第一轮跳过"完全靠"没有上一轮的输出可接"这件事本身，不需要额外开关。
+- ✅ 已用假 VAE/latent 自测，覆盖跳过、alpha 丢弃、分辨率适配等分支；同样**尚未在真实采样流程里验证**。
+
+---
+
+### 15. 🐦‍🔥 Image Batch Extend With Overlap　`FlywayImageBatchExtendOverlap`　✅（1.9.0 改为累加器设计，不兼容旧接线）
+
+**简介**：Loop 累加器，专为“逐段生成、逐段去重叠、循环结束时拿到完整视频”设计。给同一条视频取一个 `accumulator_id`（任意字符串，Loop 全程复用），节点自己记住已经拼好的内容——不用再由你在图里把 `extended_images` 或 `tail_images` 手工接回下一轮的 `source_images`。每轮：① 用 `overlap` 去重叠新帧；② 追加进累加器；③ 输出 `tail_images` 给下一轮节点 13/14 用。收尾那轮，`extended_images` 会额外给出完整视频，然后累加器自动释放。判断“收尾”有两种方式，任选其一：直接把 `is_last` 设为 True；或者接上 `index`（Loop 当前迭代索引，0 开始）和 `total`（总轮数），节点会自动在 `index == total - 1` 时当成最后一轮。`index` 还有另一个作用：**接上后 `index == 0` 会自动先清空这个累加器**，不用再单独拉个逻辑节点判断第一轮。
+
+累加器存在哪，行为完全一样，只是介质不同：`cache_path` 留空 = 存内存（收尾后自动释放）；`cache_path` 填目录 = 存磁盘（编号 PNG，收尾后文件不删，自己决定何时清理）。**磁盘模式不需要 `accumulator_id`**（目录本身就是身份），但接口上仍要求填，可以随便填。`reset=True`（或 `index==0`）用于故意重开一个正在复用的 `accumulator_id`/`cache_path`——全新的 id/目录本来就会自动从空开始，正常使用不需要这个开关。
+
+| 输入 | 类型 | 默认 | 说明 |
+|------|------|------|------|
+| `new_images` | IMAGE | — | 刚生成的新 clip |
+| `accumulator_id` | STRING | 空 | 这个视频在整个 Loop 里的身份标识，每轮填**同一个字符串**；不同视频用不同字符串。`cache_path` 为空（内存模式）时必填，否则报错 |
+| `overlap` | INT | 0 | 新旧两段重复的帧数；0 = 直接首尾相接，不去重。建议直接接节点 13/14 的 `context_frames` 输出 |
+| `overlap_side` | `new_images/source` | new_images | `overlap_mode=cut` 时，重复帧从哪一边扣掉：默认扣 `new_images` 的前段，保留累加器里已确认的帧原样不动 |
+| `overlap_mode` | `cut/linear_blend/ease_in_out` | cut | `cut`：直接裁掉重复帧（推荐）；`linear_blend`/`ease_in_out`：把重叠区做线性或缓入缓出交叉淡化 |
+| `tail_frames`（可选） | INT | 0 | `tail_images` 输出取累加器最新的 N 帧；0 = 和 `extended_images` 一样 |
+| `is_last`（可选） | BOOLEAN | False | True：这是 Loop 收尾的那一轮，`extended_images` 输出完整视频，随后累加器释放。如果 `index`+`total` 已经能判断出最后一轮，这个开关可不用接 |
+| `cache_path`（可选） | STRING | 空 | 空 = 存内存（收尾后释放）；填目录 = 存磁盘为编号 PNG（收尾后文件保留） |
+| `reset`（可选） | BOOLEAN | False | True：处理本次调用前先清空这个累加器。只在故意重开一个复用的 id/目录时才需要；`index==0` 会自动触发同样效果 |
+| `index`（可选） | INT | -1 | 接 Loop 的迭代索引（0 开始）：`index==0` 自动重置累加器。留 -1 表示不使用，改用 `reset`/`is_last` 手动控制 |
+| `total`（可选） | INT | -1 | 接 Loop 的总轮数：配合 `index` 使用，`index >= total-1` 时自动当成最后一轮。单独接不起作用，必须搭配 `index` |
+
+输出：`extended_images`(IMAGE，内存模式下始终是当前完整累加内容；磁盘模式下非最后一轮是小结果，`is_last=True` 时才是整段读回的完整视频)、`added_images`(IMAGE，本次去重叠后真正新增的部分)、`tail_images`(IMAGE，累加器最新的 `tail_frames` 帧)、`overlap_used`(INT)、`total_frames`(INT，累加器当前的真实总帧数，两种存储模式下都准确)
+
+**注意**
+- **⚠️ 这是 1.9.0 的破坏性改动**：原来的 `source_images`（手动接线）、`clear_cache`、`load_full_from_cache` 三个输入已删除，换成 `accumulator_id`、`reset`、`is_last`（以及新增的 `index`/`total`）。用旧版本接过线的工作流需要重新接线：删掉 `source_images` 和 `extended_images`/`tail_images` 之间那根手工循环连线，改填 `accumulator_id`，并接上 Loop 的 `index`/`total`（或手动在最后一轮把 `is_last` 设为 True）。
+- `overlap` 会自动夹紧：不超过累加器当前的帧数，且至少给 `new_images` 留 1 帧，超出范围不会报错，只会用夹紧后的值（可从 `overlap_used` 读到实际值）。
+- 累加器和 `new_images` 的高/宽/通道数必须完全一致，否则报 `ValueError`。
+- `new_images` 不能为空批次，否则报 `ValueError`。
+- **内存模式**：累加器就是一个 Python 进程内的字典，按 `accumulator_id` 存取，ComfyUI 不重启就一直在；收尾处理完会自动删除这个 id 的条目，同一个 id 下次再用会重新从空开始。**不同 Loop 一定要用不同的 `accumulator_id`**，否则会互相踩踏。
+- **磁盘模式**：只在磁盘上追加真正新增的帧（`added_images`），从不整段重写；去重叠所需的“上一轮尾巴”只从磁盘按需读回一小段（最多 `max(overlap, tail_frames)` 帧），不会因为视频变长而拖慢或吃内存。`is_last=True` 时才会把整个目录读成一张大批次给 `extended_images`，这是唯一一次“整段进内存”的操作。
+- 三种 `overlap_mode` 里，只有 `cut` 保证已累加的帧像素完全不变；两种混合模式会重新计算重叠区那几帧的像素。
+- ✅ 已对张量逻辑、内存/磁盘两种累加器、以及 `index`/`total` 自动判断做了自测（含多轮累加、`is_last` 完整读回并自动释放、`reset`、跨轮次隔离等用例），**尚未在真实工作流里验证生成画面的实际接缝效果**。
+
+---
+
+### 16. 🐦‍🔥 Audio Batch Extend With Overlap　`FlywayAudioBatchExtendOverlap`　✅（1.9.0 改为累加器设计，不兼容旧接线）
+
+**简介**：节点 15 的音频版，同一套 `accumulator_id`/`is_last`/`reset`/`index`/`total` 累加器设计，用于 Loop 里让声轨跟着视频一起逐段拼接。区别只在音频特有的部分：
+
+- 重叠和尾段按**秒数**（不是帧数），因为音频有自己的采样率，和视频 fps 无关；要复用视频那边的重叠帧数，先用 Math 节点除以 fps 换算成秒。
+- `new_audio` 采样率和累加器不一致时自动重采样，结果始终跟随累加器的采样率（累加器为空时跟随 `new_audio`）。
+- **除非你也搭了一套真正的音频 Motion Context**（把上一段音频的尾巴当 guide 锚定进新一段，让模型真正续写声音），否则每段生成的音频彼此独立，根本没有重复内容可去重——`overlap_seconds` 请填 0，把这个节点当纯Loop 拼接器用（配合磁盘缓存）即可。`equal_power` 交叉淡化仍然可以单独当“接缝处抹平硬切”的美化手段使用，跟是否有真实重叠无关。
+
+| 输入 | 类型 | 默认 | 说明 |
+|------|------|------|------|
+| `new_audio` | AUDIO | — | 刚生成的新 clip 对应的音频 |
+| `accumulator_id` | STRING | 空 | 同节点 15；`cache_path` 为空（内存模式）时必填 |
+| `overlap_seconds` | FLOAT | 0.0 | 新旧两段重复的秒数；没有真实音频上下文融合时保持 0 |
+| `overlap_side` | `new_audio/source` | new_audio | `overlap_mode=cut` 时，重复部分从哪一边扣掉 |
+| `overlap_mode` | `cut/equal_power` | cut | `cut`：直接裁掉；`equal_power`：等功率交叉淡化，不会有响度下陷，也可单独当接缝美化用 |
+| `tail_seconds`（可选） | FLOAT | 0.0 | `tail_audio` 取累加器最新的 N 秒；0 = 整段 |
+| `is_last`（可选） | BOOLEAN | False | 同节点 15：True 时 `extended_audio` 输出完整声轨，随后累加器释放 |
+| `cache_path`（可选） | STRING | 空 | 空 = 存内存；填目录 = 存磁盘为编号 .wav 片段 |
+| `reset`（可选） | BOOLEAN | False | 同节点 15 |
+| `index`（可选） | INT | -1 | 同节点 15：`index==0` 自动重置 |
+| `total`（可选） | INT | -1 | 同节点 15：`index>=total-1` 自动成为最后一轮 |
+
+输出：`extended_audio`(AUDIO，含义同节点 15 的 `extended_images`)、`added_audio`(AUDIO，本次新增部分)、`tail_audio`(AUDIO，累加器最新的 `tail_seconds` 秒)、`overlap_seconds_used`(FLOAT)、`total_seconds`(FLOAT，累加器当前真实总时长)
+
+**注意**
+- **⚠️ 1.9.0 破坏性改动**：同节点 15，`source_audio`/`clear_cache`/`load_full_from_cache` 已删除，换成 `accumulator_id`/`reset`/`is_last`/`index`/`total`，旧工作流需要重新接线。
+- 声道数（和 batch 维度）不一致会报 `ValueError`；重叠/尾段换算成采样点后同样会自动夹紧，不会超过累加器当前的采样点数。
+- 磁盘模式下每段以独立 .wav 文件保存，去重叠所需的“尾巴”只按需读回够用的片段，不整段重读；`is_last=True` 时才整段拼接读回。
+- ✅ 已对波形逻辑、内存/磁盘两种累加器、`index`/`total` 做了自测（含重采样、等功率交叉淡化、声道校验、多轮累加、`is_last`、`reset` 等用例），**尚未在真实工作流里验证生成声轨的实际拼接效果**。
+
+---
+
 ## 四、辅助文件（不是节点）
 
 ### `flyway_transcribe_only.py`
@@ -416,12 +535,13 @@
 | Lyric Align（有歌词） | `lyric-align` 命令行（`uv tool install`） |
 | Lyric Align（无歌词） | `faster-whisper` |
 | 示例工作流 | VideoHelperSuite、comfyui-florence2 |
+| H3 Motion Context / Extend With Overlap | 支持 MiniMax H3 的 ComfyUI 内核（`comfy.ldm.minimax.model`）；仅生成阶段需要，逻辑函数本身可在无 GPU 环境下单测 |
 
 ## 八、目录结构
 
 ```
 comfyui-flyway/
-├─ __init__.py                     注册全部 12 个节点，声明 WEB_DIRECTORY
+├─ __init__.py                     注册全部 16 个节点，声明 WEB_DIRECTORY
 ├─ NODES.md                        本文
 ├─ README.md                       概览
 ├─ flyway_nodes.py                 节点 1–4
@@ -433,6 +553,9 @@ comfyui-flyway/
 ├─ flyway_florence2_tools.py       节点 10、11（来自 test-comfyui）
 ├─ flyway_lyric_align.py           节点 12  （来自 test-comfyui）
 ├─ flyway_transcribe_only.py       辅助脚本（非节点）
+├─ flyway_h3_motion.py             节点 13–16
+├─ js/flyway_h3_motion_labels.js   节点 13 的 clear_directory 显示为“前置清理”（仅改前端文字，不改参数名）
+├─ tests/test_h3_motion.py         节点 13–16 的自测脚本（无 GPU/ComfyUI 也能跑）
 ├─ js/flyway_audio.js              前端音频播放器
 ├─ locales/en|zh/main.json         多语言标题
 ├─ example_workflows/              示例工作流
